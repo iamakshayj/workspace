@@ -2058,17 +2058,6 @@ async def init_database() -> None:
             sync_connection.execute(
                 text("CREATE INDEX IF NOT EXISTS ix_projects_title ON projects (title)")
             )
-            sync_connection.execute(
-                text(
-                    "INSERT INTO project_collaborators (project_id, user_id, added_at) "
-                    "SELECT projects.id, projects.owner_id, :added_at FROM projects "
-                    "WHERE projects.owner_id IS NOT NULL AND NOT EXISTS ("
-                    "SELECT 1 FROM project_collaborators "
-                    "WHERE project_collaborators.project_id = projects.id "
-                    "AND project_collaborators.user_id = projects.owner_id)"
-                ),
-                {"added_at": now},
-            )
             collaborator_columns = {
                 column["name"]
                 for column in inspect(sync_connection).get_columns("project_collaborators")
@@ -2080,6 +2069,18 @@ async def init_database() -> None:
                         "NOT NULL DEFAULT 'viewer'"
                     )
                 )
+            sync_connection.execute(
+                text(
+                    "INSERT INTO project_collaborators "
+                    "(project_id, user_id, access_role, added_at) "
+                    "SELECT projects.id, projects.owner_id, 'viewer', :added_at FROM projects "
+                    "WHERE projects.owner_id IS NOT NULL AND NOT EXISTS ("
+                    "SELECT 1 FROM project_collaborators "
+                    "WHERE project_collaborators.project_id = projects.id "
+                    "AND project_collaborators.user_id = projects.owner_id)"
+                ),
+                {"added_at": now},
+            )
             sync_connection.execute(
                 text(
                     "UPDATE project_collaborators SET access_role = 'editor' "
@@ -2099,10 +2100,10 @@ async def init_database() -> None:
                 sync_connection.execute(
                     text(
                         "INSERT INTO project_revisions ("
-                        "id, project_id, version, title, description, status, source_text, "
+                        "id, project_id, version, title, description, status, profile, source_text, "
                         "graph, change_summary, created_by_id, created_at"
                         ") VALUES ("
-                        ":id, :project_id, 1, :title, :description, :status, :source_text, "
+                        ":id, :project_id, 1, :title, :description, :status, :profile, :source_text, "
                         ":graph, 'Imported existing flowchart', :created_by_id, :created_at"
                         ")"
                     ),
@@ -2112,6 +2113,7 @@ async def init_database() -> None:
                         "title": legacy_project["title"],
                         "description": legacy_project["description"] or "",
                         "status": legacy_project["status"] or "active",
+                        "profile": json.dumps({}),
                         "source_text": legacy_project["source_text"] or "",
                         "graph": legacy_project["graph"],
                         "created_by_id": legacy_project["owner_id"],
