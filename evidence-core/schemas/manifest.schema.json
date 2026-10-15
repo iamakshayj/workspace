@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:verifiable-evidence-core:schema:manifest:1.0",
+  "title": "Verifiable evidence pack manifest",
+  "type": "object",
+  "required": ["format", "format_version", "pack_id", "created_at", "producer", "hash_algorithm", "signature_algorithm", "merkle_root", "records", "controls"],
+  "properties": {
+    "format": {"const": "verifiable-evidence-pack"},
+    "format_version": {"const": "1.0"},
+    "pack_id": {"type": "string", "format": "uuid"},
+    "created_at": {"type": "string", "format": "date-time"},
+    "producer": {"type": "string", "minLength": 1},
+    "hash_algorithm": {"const": "SHA-256"},
+    "signature_algorithm": {"const": "Ed25519"},
+    "merkle_root": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "records": {"type": "array", "items": {"$ref": "#/$defs/file"}},
+    "controls": {"type": "array", "items": {"$ref": "#/$defs/file"}}
+  },
+  "$defs": {
+    "file": {
+      "type": "object",
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    }
+  }
+}

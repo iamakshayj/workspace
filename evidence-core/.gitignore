@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+.pytest_cache/
+*.py[cod]
+*.pem
+*.key
+*.evidence.zip
+benchmark-result*.json
+impact*.jsonl
+dist/
+build/
+*.egg-info/

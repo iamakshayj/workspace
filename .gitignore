@@ -18,7 +18,22 @@
 .env.test.local
 .env.production.local
 .env
+.env.production
+backend/.env
+.venv/
+__pycache__/
+*.py[cod]
+*.db
+.pytest_cache/
+.local/
+.models/
+.flowforge-storage/
 
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# generated local artifacts
+/output/
+/tmp/
+/steering-files-presentation/.build/

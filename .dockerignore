@@ -1,0 +1,16 @@
+.git
+.gitignore
+.env
+.env.*
+backend/.env
+.venv
+node_modules
+build
+coverage
+*.db
+**/__pycache__
+**/.pytest_cache
+.local
+.models
+.flowforge-storage
+scheduler-mvp
