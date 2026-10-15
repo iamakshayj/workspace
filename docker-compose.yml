@@ -1,0 +1,237 @@
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+      args:
+        REACT_APP_WEBRTC_ICE_SERVERS: ${REACT_APP_WEBRTC_ICE_SERVERS:-[]}
+    ports:
+      - "3000:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      FLOWFORGE_ENVIRONMENT: production
+      FLOWFORGE_MODEL_BASE_URL: ${FLOWFORGE_MODEL_BASE_URL:-http://model:8000/v1}
+      FLOWFORGE_MODEL_NAME: ${MODEL_NAME:-Qwen/Qwen3-4B}
+      FLOWFORGE_MODEL_API_TOKEN: ${FLOWFORGE_MODEL_API_TOKEN:?Set FLOWFORGE_MODEL_API_TOKEN}
+      FLOWFORGE_MODEL_RESPONSE_FORMAT: json_schema
+      FLOWFORGE_DATABASE_URL: ${FLOWFORGE_DATABASE_URL:?Set FLOWFORGE_DATABASE_URL to a PostgreSQL connection URL}
+      FLOWFORGE_REDIS_URL: ${FLOWFORGE_REDIS_URL:?Set FLOWFORGE_REDIS_URL to a Redis connection URL}
+      FLOWFORGE_EMBEDDED_WORKER_ENABLED: "false"
+      FLOWFORGE_STORAGE_BACKEND: s3
+      FLOWFORGE_STORAGE_BUCKET: ${FLOWFORGE_STORAGE_BUCKET:-flowforge-attachments}
+      FLOWFORGE_STORAGE_ENDPOINT_URL: http://minio:9000
+      FLOWFORGE_STORAGE_PUBLIC_ENDPOINT_URL: ${FLOWFORGE_STORAGE_PUBLIC_ENDPOINT_URL:?Set the public HTTPS S3 endpoint}
+      FLOWFORGE_STORAGE_ACCESS_KEY_ID: ${MINIO_ROOT_USER:?Set MINIO_ROOT_USER}
+      FLOWFORGE_STORAGE_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD}
+      FLOWFORGE_DEPLOYMENT_REGION: ${FLOWFORGE_DEPLOYMENT_REGION:-us-central}
+      FLOWFORGE_ATTACHMENT_SCAN_MODE: clamav
+      FLOWFORGE_CLAMAV_HOST: clamav
+      FLOWFORGE_CORS_ORIGINS: ${FLOWFORGE_CORS_ORIGINS:?Set FLOWFORGE_CORS_ORIGINS as a JSON list of HTTPS origins}
+      FLOWFORGE_AUTH_SECRET: ${FLOWFORGE_AUTH_SECRET:?Set FLOWFORGE_AUTH_SECRET}
+      FLOWFORGE_AUTH_COOKIE_SECURE: "true"
+      FLOWFORGE_INTERNAL_API_KEY: ${FLOWFORGE_INTERNAL_API_KEY:?Set FLOWFORGE_INTERNAL_API_KEY}
+      FLOWFORGE_METRICS_API_KEY: ${FLOWFORGE_METRICS_API_KEY:?Set FLOWFORGE_METRICS_API_KEY}
+      FLOWFORGE_REQUEST_RATE_LIMIT: ${FLOWFORGE_REQUEST_RATE_LIMIT:-180}
+      FLOWFORGE_REQUEST_RATE_WINDOW_SECONDS: ${FLOWFORGE_REQUEST_RATE_WINDOW_SECONDS:-60}
+      FLOWFORGE_RATE_LIMIT_TRUST_FORWARDED_FOR: "true"
+      FLOWFORGE_JOB_RESULT_RETENTION_DAYS: ${FLOWFORGE_JOB_RESULT_RETENTION_DAYS:-7}
+      FLOWFORGE_JOB_HISTORY_RETENTION_DAYS: ${FLOWFORGE_JOB_HISTORY_RETENTION_DAYS:-90}
+      FLOWFORGE_ATTACHMENT_UPLOAD_EXPIRY_HOURS: ${FLOWFORGE_ATTACHMENT_UPLOAD_EXPIRY_HOURS:-24}
+      FLOWFORGE_ARTIFACT_RETENTION_DAYS: ${FLOWFORGE_ARTIFACT_RETENTION_DAYS:-7}
+      FLOWFORGE_MAX_ARTIFACT_BYTES: ${FLOWFORGE_MAX_ARTIFACT_BYTES:-52428800}
+      FLOWFORGE_FRONTEND_URL: ${FLOWFORGE_FRONTEND_URL:?Set FLOWFORGE_FRONTEND_URL to the public HTTPS URL}
+      FLOWFORGE_EMAIL_DELIVERY_MODE: smtp
+      FLOWFORGE_SMTP_HOST: ${FLOWFORGE_SMTP_HOST:?Set FLOWFORGE_SMTP_HOST}
+      FLOWFORGE_SMTP_PORT: ${FLOWFORGE_SMTP_PORT:-587}
+      FLOWFORGE_SMTP_USERNAME: ${FLOWFORGE_SMTP_USERNAME:-}
+      FLOWFORGE_SMTP_PASSWORD: ${FLOWFORGE_SMTP_PASSWORD:-}
+      FLOWFORGE_SMTP_FROM_EMAIL: ${FLOWFORGE_SMTP_FROM_EMAIL:?Set FLOWFORGE_SMTP_FROM_EMAIL}
+    expose:
+      - "8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/ready', timeout=5)"]
+      interval: 10s
+      timeout: 6s
+      retries: 10
+      start_period: 20s
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    command: ["python", "-m", "backend.app.worker"]
+    environment:
+      FLOWFORGE_ENVIRONMENT: production
+      FLOWFORGE_MODEL_BASE_URL: ${FLOWFORGE_MODEL_BASE_URL:-http://model:8000/v1}
+      FLOWFORGE_MODEL_NAME: ${MODEL_NAME:-Qwen/Qwen3-4B}
+      FLOWFORGE_MODEL_API_TOKEN: ${FLOWFORGE_MODEL_API_TOKEN:?Set FLOWFORGE_MODEL_API_TOKEN}
+      FLOWFORGE_MODEL_RESPONSE_FORMAT: json_schema
+      FLOWFORGE_DATABASE_URL: ${FLOWFORGE_DATABASE_URL:?Set FLOWFORGE_DATABASE_URL to a PostgreSQL connection URL}
+      FLOWFORGE_REDIS_URL: ${FLOWFORGE_REDIS_URL:?Set FLOWFORGE_REDIS_URL to a Redis connection URL}
+      FLOWFORGE_EMBEDDED_WORKER_ENABLED: "false"
+      FLOWFORGE_STORAGE_BACKEND: s3
+      FLOWFORGE_STORAGE_BUCKET: ${FLOWFORGE_STORAGE_BUCKET:-flowforge-attachments}
+      FLOWFORGE_STORAGE_ENDPOINT_URL: http://minio:9000
+      FLOWFORGE_STORAGE_PUBLIC_ENDPOINT_URL: ${FLOWFORGE_STORAGE_PUBLIC_ENDPOINT_URL:?Set the public HTTPS S3 endpoint}
+      FLOWFORGE_STORAGE_ACCESS_KEY_ID: ${MINIO_ROOT_USER:?Set MINIO_ROOT_USER}
+      FLOWFORGE_STORAGE_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD}
+      FLOWFORGE_DEPLOYMENT_REGION: ${FLOWFORGE_DEPLOYMENT_REGION:-us-central}
+      FLOWFORGE_ATTACHMENT_SCAN_MODE: clamav
+      FLOWFORGE_CLAMAV_HOST: clamav
+      FLOWFORGE_CORS_ORIGINS: ${FLOWFORGE_CORS_ORIGINS:?Set FLOWFORGE_CORS_ORIGINS as a JSON list of HTTPS origins}
+      FLOWFORGE_AUTH_SECRET: ${FLOWFORGE_AUTH_SECRET:?Set FLOWFORGE_AUTH_SECRET}
+      FLOWFORGE_AUTH_COOKIE_SECURE: "true"
+      FLOWFORGE_INTERNAL_API_KEY: ${FLOWFORGE_INTERNAL_API_KEY:?Set FLOWFORGE_INTERNAL_API_KEY}
+      FLOWFORGE_METRICS_API_KEY: ${FLOWFORGE_METRICS_API_KEY:?Set FLOWFORGE_METRICS_API_KEY}
+      FLOWFORGE_JOB_RESULT_RETENTION_DAYS: ${FLOWFORGE_JOB_RESULT_RETENTION_DAYS:-7}
+      FLOWFORGE_JOB_HISTORY_RETENTION_DAYS: ${FLOWFORGE_JOB_HISTORY_RETENTION_DAYS:-90}
+      FLOWFORGE_ATTACHMENT_UPLOAD_EXPIRY_HOURS: ${FLOWFORGE_ATTACHMENT_UPLOAD_EXPIRY_HOURS:-24}
+      FLOWFORGE_ARTIFACT_RETENTION_DAYS: ${FLOWFORGE_ARTIFACT_RETENTION_DAYS:-7}
+      FLOWFORGE_MAX_ARTIFACT_BYTES: ${FLOWFORGE_MAX_ARTIFACT_BYTES:-52428800}
+      FLOWFORGE_FRONTEND_URL: ${FLOWFORGE_FRONTEND_URL:?Set FLOWFORGE_FRONTEND_URL to the public HTTPS URL}
+      FLOWFORGE_EMAIL_DELIVERY_MODE: smtp
+      FLOWFORGE_SMTP_HOST: ${FLOWFORGE_SMTP_HOST:?Set FLOWFORGE_SMTP_HOST}
+      FLOWFORGE_SMTP_PORT: ${FLOWFORGE_SMTP_PORT:-587}
+      FLOWFORGE_SMTP_USERNAME: ${FLOWFORGE_SMTP_USERNAME:-}
+      FLOWFORGE_SMTP_PASSWORD: ${FLOWFORGE_SMTP_PASSWORD:-}
+      FLOWFORGE_SMTP_FROM_EMAIL: ${FLOWFORGE_SMTP_FROM_EMAIL:?Set FLOWFORGE_SMTP_FROM_EMAIL}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      clamav:
+        condition: service_healthy
+    restart: unless-stopped
+
+  migrate:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    command: ["alembic", "upgrade", "head"]
+    environment:
+      FLOWFORGE_DATABASE_URL: ${FLOWFORGE_DATABASE_URL:?Set FLOWFORGE_DATABASE_URL to a PostgreSQL connection URL}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: flowforge
+      POSTGRES_USER: flowforge
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U flowforge"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  redis:
+    image: redis:8.2-alpine
+    command: ["sh", "-c", "exec redis-server --appendonly yes --requirepass \"$$REDIS_PASSWORD\""]
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Set REDIS_PASSWORD}
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  minio:
+    image: minio/minio:RELEASE.2025-09-07T16-13-09Z
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?Set MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio_data:/data
+    expose:
+      - "9000"
+      - "9001"
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  clamav:
+    image: clamav/clamav:1.5.4-debian13-slim
+    volumes:
+      - clamav_data:/var/lib/clamav
+    expose:
+      - "3310"
+    healthcheck:
+      test: ["CMD", "clamdcheck.sh"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 90s
+    restart: unless-stopped
+
+  model:
+    image: vllm/vllm-openai:v0.12.0
+    profiles: ["gpu"]
+    command:
+      - --model
+      - ${MODEL_NAME:-Qwen/Qwen3-4B}
+      - --served-model-name
+      - ${MODEL_NAME:-Qwen/Qwen3-4B}
+      - --api-key
+      - ${FLOWFORGE_MODEL_API_TOKEN:?Set FLOWFORGE_MODEL_API_TOKEN}
+      - --max-model-len
+      - "16384"
+      - --structured-outputs-config.backend
+      - xgrammar
+    environment:
+      HUGGING_FACE_HUB_TOKEN: ${HUGGING_FACE_HUB_TOKEN:-}
+    volumes:
+      - huggingface_cache:/root/.cache/huggingface
+    expose:
+      - "8000"
+    ipc: host
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:
+  clamav_data:
+  huggingface_cache:

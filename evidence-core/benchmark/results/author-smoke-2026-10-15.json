@@ -1,0 +1,55 @@
+{
+  "attestation": {
+    "independent": false,
+    "operator": "Akshay Jagadeesh project workspace",
+    "purpose": "Author-run smoke result; rerun on a tagged release before public performance claims",
+    "command": "PYTHONPATH=src ../.venv/bin/python -m evidence_core.cli benchmark --output /tmp/evidence-benchmark-final.json --incidents 250 --noise 1000 --seed 42",
+    "base_commit": "e08bcc4a79e0295d65f47b9fb75e064ca3e9dcfd",
+    "code_state": "uncommitted evidence-core working tree"
+  },
+  "schema_version": "1.0",
+  "started_at": "2026-10-15T04:58:32.950788Z",
+  "environment": {
+    "python": "3.12.14",
+    "implementation": "CPython",
+    "platform": "macOS-14.6-arm64-arm-64bit",
+    "logical_cpu_count": 8
+  },
+  "dataset": {
+    "type": "deterministic-synthetic-healthcare-security",
+    "contains_phi": false,
+    "seed": 42,
+    "incident_count": 250,
+    "noise_count": 1000,
+    "record_count": 1873
+  },
+  "results": {
+    "generation_seconds": 0.005241,
+    "generation_records_per_second": 357354.63,
+    "correlation_seconds": 0.018214,
+    "correlation_records_per_second": 102832.99,
+    "indexing_seconds": 0.000661,
+    "indexing_records_per_second": 2834477.44,
+    "indexed_filter_query_count": 1000,
+    "indexed_filter_queries_per_second": 13300.25,
+    "pair_precision": 1.0,
+    "pair_recall": 1.0,
+    "false_positive_pairs": 0,
+    "false_negative_pairs": 0,
+    "pack_creation_seconds": 0.096373,
+    "pack_records_per_second": 19434.87,
+    "pack_bytes": 847584,
+    "pack_verification_seconds": 0.048017,
+    "verification_records_per_second": 39007.05,
+    "pack_valid": true,
+    "signer_trusted": true,
+    "timestamp_verified": true,
+    "timestamp_trusted": true
+  },
+  "manual_comparison": {
+    "status": "not-provided",
+    "observed_human_study": false,
+    "note": "Supply explicit assumptions or, preferably, independently observed pilot inputs; no savings claim is made."
+  },
+  "environment_note": "Also record physical CPU/RAM, git commit, dependency lock, and exact command when publishing results."
+}

@@ -1,0 +1,10 @@
+claim_id,claim,claim_type,status,independent,evidence_location,owner,next_action
+C-001,Created Verifiable Evidence Core,authorship,internally_verified,no,evidence-core/AUTHORS.md,Akshay Jagadeesh,publish public release
+C-002,Implemented signed tamper-detecting evidence packs,original_contribution,internally_verified,no,evidence-core/src/evidence_core/pack.py,Akshay Jagadeesh,obtain independent security review
+C-003,Published a technical architecture paper,authorship,draft_only,no,evidence-core/paper/architecture.md,Akshay Jagadeesh,publish with immutable date and URL
+C-004,Processes evidence at published throughput,benchmark,not_yet_published,no,evidence-core/benchmark/,Akshay Jagadeesh,run and publish hardware-pinned repetitions
+C-005,Saves audit hours,impact,unverified,no,,Akshay Jagadeesh,measure in signed external pilot
+C-006,Used by external organizations,adoption,unverified,yes,,Akshay Jagadeesh,run pilots and collect permissioned proof
+C-007,Methodology reviewed by recognized experts,expert_review,unverified,yes,,Akshay Jagadeesh,send review package
+C-008,Presented at technical events,speaking,unverified,yes,,Akshay Jagadeesh,submit abstract and preserve acceptance/program
+C-009,Received competitive recognition,award,unverified,yes,,Akshay Jagadeesh,submit to relevant programs and preserve rules/results

@@ -1,0 +1,35 @@
+name: Evidence core
+
+on:
+  push:
+    paths:
+      - "evidence-core/**"
+      - ".github/workflows/evidence-core.yml"
+  pull_request:
+    paths:
+      - "evidence-core/**"
+      - ".github/workflows/evidence-core.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    defaults:
+      run:
+        working-directory: evidence-core
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: evidence-core/pyproject.toml
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install -e '.[dev]'
+      - run: python -m pytest
+      - run: evidence-core benchmark --output /tmp/benchmark.json --incidents 25 --noise 100 --seed 42
