@@ -1,0 +1,36 @@
+services:
+  - type: web
+    name: workspace-enterprise-demo
+    runtime: docker
+    plan: free
+    region: ohio
+    branch: main
+    dockerfilePath: ./Dockerfile.render
+    dockerContext: .
+    healthCheckPath: /health
+    autoDeployTrigger: commit
+    envVars:
+      - key: FLOWFORGE_ENVIRONMENT
+        value: demo
+      - key: FLOWFORGE_DATABASE_URL
+        value: sqlite+aiosqlite:///./flowforge.db
+      - key: FLOWFORGE_STORAGE_BACKEND
+        value: local
+      - key: FLOWFORGE_STORAGE_LOCAL_PATH
+        value: .flowforge-storage
+      - key: FLOWFORGE_AUTH_COOKIE_SECURE
+        value: "true"
+      - key: FLOWFORGE_AUTH_SECRET
+        generateValue: true
+      - key: FLOWFORGE_INTERNAL_API_KEY
+        generateValue: true
+      - key: FLOWFORGE_METRICS_API_KEY
+        generateValue: true
+      - key: FLOWFORGE_MODEL_API_TOKEN
+        generateValue: true
+      - key: FLOWFORGE_EMAIL_DELIVERY_MODE
+        value: console
+      - key: FLOWFORGE_RATE_LIMIT_TRUST_FORWARDED_FOR
+        value: "true"
+      - key: FLOWFORGE_EMBEDDED_WORKER_ENABLED
+        value: "true"
