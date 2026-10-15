@@ -29,6 +29,7 @@ from .database import (
     ProjectDecision,
     ProjectGroupAccess,
     ProjectRisk,
+    ServiceTicket,
     User,
     WorkItem,
     WorkspaceFile,
@@ -41,7 +42,7 @@ router = APIRouter(prefix="/work-graph", tags=["enterprise work graph"])
 
 OBJECT_TYPES = {
     "employee", "project", "workflow", "work_item", "sprint", "release", "meeting",
-    "document", "file", "decision", "risk", "approval", "unit", "team", "custom",
+    "document", "file", "decision", "risk", "approval", "unit", "team", "service_ticket", "custom",
 }
 RELATIONSHIP_TYPES = {
     "parent_of", "child_of", "belongs_to", "owned_by", "assigned_to", "blocked_by",
@@ -75,6 +76,7 @@ MODEL_BY_TYPE = {
     "approval": ApprovalInstance,
     "unit": OrganizationUnit,
     "team": OrganizationUnit,
+    "service_ticket": ServiceTicket,
 }
 
 
@@ -249,6 +251,8 @@ def object_url(object_type: str, item: Any) -> str:
         return f"/work?tab={object_type}s&{object_type}={item.id}"
     if object_type == "file":
         return "/operations?tab=files"
+    if object_type == "service_ticket":
+        return f"/service?ticket={item.id}"
     return "/operations"
 
 
@@ -278,6 +282,8 @@ def object_summary(object_type: str, item: Any) -> dict[str, Any]:
         result["metadata"] = {"probability": item.probability, "impact": item.impact}
     elif object_type == "document":
         result["metadata"] = {"classification": item.classification, "visibility": item.visibility}
+    elif object_type == "service_ticket":
+        result["metadata"] = {"severity": item.severity, "priority": item.priority, "ticket_type": item.ticket_type, "service": item.service}
     return result
 
 

@@ -22,6 +22,7 @@ from .database import (
     ProjectRisk,
     RecentSearch,
     SavedSearch,
+    ServiceTicket,
     User,
     WorkItem,
     WorkspaceFile,
@@ -32,7 +33,7 @@ from .policy_engine import PolicyContext, evaluate_policy, load_policy_snapshot
 
 
 router = APIRouter(prefix="/search", tags=["enterprise search"])
-SEARCH_TYPES = {"project", "work_item", "document", "meeting", "decision", "risk", "release", "sprint", "file"}
+SEARCH_TYPES = {"project", "work_item", "document", "meeting", "decision", "risk", "release", "sprint", "file", "service_ticket"}
 TYPE_MODELS = {
     "project": Project,
     "work_item": WorkItem,
@@ -43,6 +44,7 @@ TYPE_MODELS = {
     "release": AgileRelease,
     "sprint": AgileSprint,
     "file": WorkspaceFile,
+    "service_ticket": ServiceTicket,
 }
 TOKEN_PATTERN = re.compile(r"[a-z0-9][a-z0-9_-]+")
 SEMANTIC_GROUPS = (
@@ -117,6 +119,8 @@ def text_fields(object_type: str, item: Any) -> tuple[str, str, str]:
         return item.name, item.goal or "", item.status
     if object_type == "file":
         return item.name, f"{item.description or ''} {item.content_text or ''}", f"{item.provider} {item.classification} {' '.join(item.tags or [])}"
+    if object_type == "service_ticket":
+        return item.title, item.description or "", f"{item.ticket_type} {item.status} {item.severity} {item.priority} {item.service} {' '.join(item.tags or [])}"
     return "", "", ""
 
 

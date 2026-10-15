@@ -14,7 +14,7 @@ from .config import get_settings
 
 
 settings = get_settings()
-EXPECTED_DATABASE_REVISION = "20260913_28"
+EXPECTED_DATABASE_REVISION = "20260915_29"
 engine = create_async_engine(settings.database_url, pool_pre_ping=True)
 session_factory = async_sessionmaker(engine, expire_on_commit=False)
 
@@ -1826,6 +1826,96 @@ class ServiceObjective(Base):
     active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     updated_by_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
+
+
+class ServiceTicket(Base):
+    __tablename__ = "service_tickets"
+    __table_args__ = (
+        Index("ix_service_tickets_entity_status_updated", "entity_id", "status", "updated_at"),
+        Index("ix_service_tickets_entity_assignee", "entity_id", "assignee_id", "status"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    entity_id: Mapped[str] = mapped_column(String(36), ForeignKey("entities.id", ondelete="CASCADE"), nullable=False, index=True)
+    requester_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    assignee_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    project_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("projects.id", ondelete="SET NULL"), nullable=True, index=True)
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    description: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    ticket_type: Mapped[str] = mapped_column(String(30), nullable=False, default="request", index=True)
+    status: Mapped[str] = mapped_column(String(24), nullable=False, default="open", index=True)
+    severity: Mapped[str] = mapped_column(String(16), nullable=False, default="normal", index=True)
+    priority: Mapped[str] = mapped_column(String(16), nullable=False, default="medium", index=True)
+    service: Mapped[str] = mapped_column(String(80), nullable=False, default="workspace")
+    source: Mapped[str] = mapped_column(String(30), nullable=False, default="portal")
+    external_requester_email: Mapped[str] = mapped_column(String(320), nullable=False, default="")
+    tags: Mapped[list] = mapped_column(JSON().with_variant(JSONB, "postgresql"), nullable=False, default=list)
+    custom_fields: Mapped[dict] = mapped_column(JSON().with_variant(JSONB, "postgresql"), nullable=False, default=dict)
+    response_due_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+    resolution_due_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+    first_response_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
+
+
+class ServiceTicketComment(Base):
+    __tablename__ = "service_ticket_comments"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    ticket_id: Mapped[str] = mapped_column(String(36), ForeignKey("service_tickets.id", ondelete="CASCADE"), nullable=False, index=True)
+    entity_id: Mapped[str] = mapped_column(String(36), ForeignKey("entities.id", ondelete="CASCADE"), nullable=False, index=True)
+    author_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    external_author: Mapped[str] = mapped_column(String(320), nullable=False, default="")
+    body: Mapped[str] = mapped_column(Text, nullable=False)
+    internal: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+
+
+class OnCallSchedule(Base):
+    __tablename__ = "on_call_schedules"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    entity_id: Mapped[str] = mapped_column(String(36), ForeignKey("entities.id", ondelete="CASCADE"), nullable=False, index=True)
+    service: Mapped[str] = mapped_column(String(80), nullable=False, index=True)
+    name: Mapped[str] = mapped_column(String(160), nullable=False)
+    member_ids: Mapped[list] = mapped_column(JSON().with_variant(JSONB, "postgresql"), nullable=False, default=list)
+    timezone: Mapped[str] = mapped_column(String(64), nullable=False, default="UTC")
+    rotation: Mapped[dict] = mapped_column(JSON().with_variant(JSONB, "postgresql"), nullable=False, default=dict)
+    active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    created_by_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+
+
+class GuestAccessGrant(Base):
+    __tablename__ = "guest_access_grants"
+    __table_args__ = (Index("ix_guest_access_entity_resource", "entity_id", "resource_type", "resource_id"),)
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    entity_id: Mapped[str] = mapped_column(String(36), ForeignKey("entities.id", ondelete="CASCADE"), nullable=False, index=True)
+    guest_email: Mapped[str] = mapped_column(String(320), nullable=False, index=True)
+    guest_name: Mapped[str] = mapped_column(String(120), nullable=False, default="")
+    resource_type: Mapped[str] = mapped_column(String(30), nullable=False)
+    resource_id: Mapped[str] = mapped_column(String(80), nullable=False)
+    permissions: Mapped[list] = mapped_column(JSON().with_variant(JSONB, "postgresql"), nullable=False, default=lambda: ["view"])
+    token_hash: Mapped[str] = mapped_column(String(64), nullable=False, unique=True, index=True)
+    created_by_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"), nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, index=True)
+    last_accessed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+
+
+class GuestPortalActivity(Base):
+    __tablename__ = "guest_portal_activities"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    grant_id: Mapped[str] = mapped_column(String(36), ForeignKey("guest_access_grants.id", ondelete="CASCADE"), nullable=False, index=True)
+    entity_id: Mapped[str] = mapped_column(String(36), ForeignKey("entities.id", ondelete="CASCADE"), nullable=False, index=True)
+    action: Mapped[str] = mapped_column(String(30), nullable=False)
+    body: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    metadata_json: Mapped[dict] = mapped_column("metadata", JSON().with_variant(JSONB, "postgresql"), nullable=False, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
 
 
 @event.listens_for(Session, "before_flush")

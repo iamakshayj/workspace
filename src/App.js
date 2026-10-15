@@ -29,6 +29,8 @@ import WorkflowSheet from './WorkflowSheet';
 import KnowledgeManagement from './KnowledgeManagement';
 import EnterpriseManagement from './EnterpriseManagement';
 import PlatformAdmin from './PlatformAdmin';
+import ServiceDesk from './ServiceDesk';
+import GuestPortal from './GuestPortal';
 import { recordOperationalEvent } from './platformService';
 
 const NODE_COLORS = {
@@ -60,6 +62,7 @@ function routeFromPath() {
   if (window.location.pathname === '/work') return { name: 'work', projectId: null };
   if (window.location.pathname === '/calendar') return { name: 'calendar', projectId: null };
   if (window.location.pathname === '/knowledge') return { name: 'knowledge', projectId: null };
+  if (window.location.pathname === '/service') return { name: 'service', projectId: null };
   if (window.location.pathname === '/operations') return { name: 'operations', projectId: null };
   if (window.location.pathname === '/admin') return { name: 'admin', projectId: null };
   if (['/workflows', '/flowcharts'].includes(window.location.pathname)) return { name: 'workflows', projectId: null };
@@ -1177,6 +1180,10 @@ function FlowForgeWorkspace() {
     return <KnowledgeManagement user={user} onNavigate={navigate} navigationKey={window.location.search} />;
   }
 
+  if (route.name === 'service') {
+    return <ServiceDesk user={user} onNavigate={navigate} navigationKey={window.location.search} />;
+  }
+
   if (route.name === 'operations') {
     return <EnterpriseManagement user={user} onNavigate={navigate} navigationKey={window.location.search} />;
   }
@@ -1492,7 +1499,10 @@ function FlowForgeWorkspace() {
 }
 
 function App() {
-  return <ThemeProvider><AuthProvider><FlowForgeWorkspace /></AuthProvider></ThemeProvider>;
+  const guestMatch = window.location.pathname.match(/^\/guest\/([^/]+)$/);
+  return <ThemeProvider>{guestMatch
+    ? <GuestPortal token={decodeURIComponent(guestMatch[1])} />
+    : <AuthProvider><FlowForgeWorkspace /></AuthProvider>}</ThemeProvider>;
 }
 
 export default App;

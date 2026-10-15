@@ -8,6 +8,7 @@ const DESTINATIONS = [
   ['calendar', '/calendar', 'Calendar'],
   ['workflows', '/workflows', 'Workflows'],
   ['knowledge', '/knowledge', 'Knowledge'],
+  ['service', '/service', 'Service'],
   ['operations', '/operations', 'Operations'],
   ['admin', '/admin', 'Admin'],
 ];

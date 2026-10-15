@@ -9,10 +9,11 @@ const SEARCH_TYPES = [
   ['project', 'Projects'], ['work_item', 'Work'], ['document', 'Documents'],
   ['meeting', 'Meetings'], ['decision', 'Decisions'], ['risk', 'Risks'],
   ['release', 'Releases'], ['sprint', 'Sprints'], ['file', 'Files'],
+  ['service_ticket', 'Service tickets'],
 ];
 const TYPE_ICONS = {
   project: '◇', work_item: '✓', document: '▤', meeting: '◷', decision: '◆',
-  risk: '△', release: '🚀', sprint: '↻', file: '▱',
+  risk: '△', release: '🚀', sprint: '↻', file: '▱', service_ticket: '!',
 };
 const QUICK_COMMANDS = [
   ['⌂', 'Open Home', '/'], ['✓', 'Open Work', '/work'], ['◷', 'Open Calendar', '/calendar'],

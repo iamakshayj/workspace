@@ -37,6 +37,7 @@ from .assistant import router as assistant_router
 from .identity_federation import identity_router, scim_router, sso_router
 from .platform_admin import router as platform_router
 from .public_api import router as public_api_router
+from .service_desk import public_router as guest_portal_router, router as service_desk_router
 from .quota_service import QuotaExceededError
 from .rate_limit import build_rate_limiter
 from .realtime import realtime_broker
@@ -255,7 +256,9 @@ app.include_router(change_proposals_router, prefix=settings.api_prefix)
 app.include_router(enterprise_search_router, prefix=settings.api_prefix)
 app.include_router(assistant_router, prefix=settings.api_prefix)
 app.include_router(platform_router, prefix=settings.api_prefix)
+app.include_router(service_desk_router, prefix=settings.api_prefix)
 app.include_router(public_api_router)
+app.include_router(guest_portal_router, prefix=settings.api_prefix)
 app.include_router(metrics_router)
 app.include_router(graphql_router, prefix="/graphql")
 

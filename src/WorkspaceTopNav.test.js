@@ -9,7 +9,7 @@ test('exposes every primary destination and identifies the current page', () => 
     actions={<button>Schedule</button>} status={<span>Service ready</span>} />);
 
   const navigation = screen.getByRole('navigation', { name: 'Primary navigation' });
-  expect(within(navigation).getAllByRole('button')).toHaveLength(6);
+  expect(within(navigation).getAllByRole('button')).toHaveLength(7);
   expect(within(navigation).getByRole('button', { name: 'Calendar' })).toHaveAttribute('aria-current', 'page');
   expect(within(navigation).getByRole('button', { name: 'Home' })).not.toHaveAttribute('aria-current');
   expect(screen.getByText('Service ready')).toBeInTheDocument();

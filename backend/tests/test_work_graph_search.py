@@ -1,4 +1,5 @@
 import asyncio
+from datetime import datetime, timedelta, timezone
 
 import pytest
 from fastapi import HTTPException
@@ -16,6 +17,7 @@ from backend.app.database import (
     Project,
     ProjectCollaborator,
     RecentSearch,
+    ServiceTicket,
     User,
     WorkItem,
 )
@@ -72,7 +74,13 @@ async def exercise_graph_and_search() -> None:
                                      status="published", visibility="workspace")
         release = AgileRelease(id="10000000-0000-0000-0000-000000000011", entity_id=entity.id,
                                created_by_id=admin.id, name="Autumn rollout", description="Customer shipment")
-        session.add_all([entity, admin, editor, guest, project, hidden_project, launch, secret, space, document, release])
+        now = datetime.now(timezone.utc)
+        ticket = ServiceTicket(id="10000000-0000-0000-0000-000000000012", entity_id=entity.id,
+                               requester_id=admin.id, assignee_id=editor.id, project_id=project.id,
+                               title="Customer portal outage", description="Checkout deployment failed",
+                               ticket_type="incident", severity="critical", priority="urgent", service="portal",
+                               response_due_at=now + timedelta(minutes=15), resolution_due_at=now + timedelta(hours=4))
+        session.add_all([entity, admin, editor, guest, project, hidden_project, launch, secret, space, document, release, ticket])
         session.add_all([
             ProjectCollaborator(project_id=project.id, user_id=editor.id, access_role="editor"),
             ProjectCollaborator(project_id=project.id, user_id=guest.id, access_role="viewer"),
@@ -102,10 +110,17 @@ async def exercise_graph_and_search() -> None:
             await related_objects("project", hidden_project.id, 1, "both", "", 100, guest, session)
         assert hidden.value.status_code == 404
 
+        await create_graph_relationship(RelationshipCreate(
+            source_type="service_ticket", source_id=ticket.id, target_type="project", target_id=project.id,
+            relationship_type="impacts",
+        ), admin, session)
+        ticket_graph = await related_objects("service_ticket", ticket.id, 1, "both", "", 100, editor, session)
+        assert ticket_graph["nodes"][0]["id"] == project.id
+
         history = await object_history("project", project.id, 50, admin, session)
         assert any(item["action"] == "relationship.created" for item in history["events"])
         stored_history = list(await session.scalars(select(ObjectRelationshipHistory)))
-        assert len(stored_history) == 3
+        assert len(stored_history) == 4
         assert first["source_id"] == project.id
 
         admin_results = await enterprise_search(q="acquisition", mode="keyword", types="project,work_item",
@@ -124,6 +139,11 @@ async def exercise_graph_and_search() -> None:
                                            offset=0, limit=40, remember=True, user=editor, session=session)
         assert semantic["results"][0]["id"] == release.id
         assert semantic["results"][0]["matched_by"] == "semantic"
+
+        tickets = await enterprise_search(q="outage", mode="keyword", types="service_ticket", statuses="",
+                                          project_id=None, owner_id=None, updated_from=None, updated_to=None,
+                                          offset=0, limit=40, remember=False, user=editor, session=session)
+        assert tickets["results"][0]["url"] == f"/service?ticket={ticket.id}"
 
         saved = await create_saved_search(SavedSearchWrite(
             name="Launch work", query="launch", mode="hybrid", filters={"types": ["project", "work_item"]},

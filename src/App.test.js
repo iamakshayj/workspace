@@ -201,7 +201,7 @@ test('uses one editor toolbar for project details and project actions', async ()
   await screen.findByText('Approval step');
 
   expect(screen.getByRole('button', { name: /^home$/i })).toBeInTheDocument();
-  expect(within(screen.getByRole('navigation', { name: 'Primary navigation' })).getAllByRole('button')).toHaveLength(7);
+  expect(within(screen.getByRole('navigation', { name: 'Primary navigation' })).getAllByRole('button')).toHaveLength(8);
   expect(within(screen.getByRole('navigation', { name: 'Primary navigation' })).getByRole('button', { name: 'Workflows' })).toHaveAttribute('aria-current', 'page');
   expect(screen.queryByRole('button', { name: /all workflows/i })).not.toBeInTheDocument();
   const toolbar = screen.getByRole('toolbar', { name: /workflow tools/i });
